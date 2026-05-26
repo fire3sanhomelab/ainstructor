@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    container_name: ainstructor-backend
+    ports:
+      - "3456:3456"
+    environment:
+      - PORT=3456
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+      - LLM_STUDIO_URL=${LLM_STUDIO_URL:-http://host.docker.internal:1234}
+    volumes:
+      - ./backend/data:/app/data
+    restart: unless-stopped
+    networks:
+      - ainstructor
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: ainstructor
+    ports:
+      - "3001:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - ainstructor
+    depends_on:
+      - backend
+
+networks:
+  ainstructor:
+    driver: bridge
