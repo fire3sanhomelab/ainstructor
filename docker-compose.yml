@@ -20,7 +20,7 @@ services:
 
   frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: docker/Dockerfile
     container_name: ainstructor
     ports:
