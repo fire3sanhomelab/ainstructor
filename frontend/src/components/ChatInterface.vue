@@ -166,7 +166,7 @@ async function sendMessage() {
   const controller = createAbortController()
   
   try {
-    const response = await fetch('/api/ainstructor/chat', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,

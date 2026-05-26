@@ -115,7 +115,7 @@ async function loadScenarios() {
   isScenariosLoading.value = true
   const controller = new AbortController()
   try {
-    const res = await fetch(`/api/ainstructor/scenarios?language=${props.language}`, {
+    const res = await fetch(`/api/scenarios?language=${props.language}`, {
       signal: controller.signal
     })
     if (res.ok) {
@@ -149,7 +149,7 @@ async function startScenario(scenario) {
   abortController.value = new AbortController()
   
   try {
-    const res = await fetch('/api/ainstructor/scenario-start', {
+    const res = await fetch('/api/scenario-start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,
@@ -204,7 +204,7 @@ async function sendMessage() {
   abortController.value = new AbortController()
   
   try {
-    const res = await fetch('/api/ainstructor/chat', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,

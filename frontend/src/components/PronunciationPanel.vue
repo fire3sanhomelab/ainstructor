@@ -168,7 +168,7 @@ async function evaluatePronunciation(spoken) {
   abortController.value = new AbortController()
 
   try {
-    const res = await fetch('/api/ainstructor/pronunciation', {
+    const res = await fetch('/api/pronunciation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,
