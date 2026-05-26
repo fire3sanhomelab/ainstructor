@@ -195,6 +195,33 @@ POST /api/scenario-start
 
 ---
 
+## 🚢 Production Deployment
+
+### Prerequisites
+- Traefik reverse proxy running with `proxy-network`
+- Docker + docker compose
+
+```bash
+# Deploy behind Traefik at /ainstructor
+make docker-up
+
+# Access: https://homelab.fire3san.duckdns.org/ainstructor
+```
+
+### Makefile Quick Reference
+
+```bash
+make help          # All commands
+make install       # Install deps
+make dev           # Dev servers
+make test          # Run tests
+make docker-up     # Deploy
+make docker-logs   # View logs
+make clean         # Clean artifacts
+```
+
+---
+
 ## 📜 License
 
 MIT © San Fung
