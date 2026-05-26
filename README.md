@@ -68,7 +68,7 @@ sequenceDiagram
 erDiagram
     CHAT {
         string id UUID
-        string language "cantonese | mandarin"
+        string language "cantonese or mandarin"
         array messages "[{role, content}]"
         string response
         int timestamp Unix
