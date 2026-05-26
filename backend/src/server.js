@@ -7,6 +7,8 @@ import { createServer } from 'http'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { errorHandler } from './middleware/errorHandler.js'
+import { validate } from './middleware/validate.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -40,13 +42,39 @@ async function writeData(file, data) {
   await fs.writeFile(path.join(ROOT, 'data', file), JSON.stringify(data, null, 2))
 }
 
+// ===== FETCH WITH TIMEOUT =====
+/**
+ * Wraps node-fetch with a configurable timeout so hanging AI endpoints
+ * don't block the request indefinitely (default 30s).
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal })
+    return res
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
+ * Escape user input before interpolation into AI prompts.
+ * Prevents prompt injection from raw speech/text input.
+ */
+function sanitize(str) {
+  if (typeof str !== 'string') return ''
+  // Remove any attempt to close JSON / inject system prompts
+  return str.replace(/[\n\r]+/g, ' ').replace(/["\{\}]/g, '').slice(0, 500)
+}
+
 // ===== HEALTH =====
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'ainstructor', version: '1.0.0', time: new Date().toISOString() })
 })
 
 // ===== CHAT =====
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', validate(['messages']), async (req, res) => {
   const { messages, language = 'cantonese', model = 'opencode-go/kimi-k2.6' } = req.body
 
   const systemPrompts = {
@@ -61,7 +89,7 @@ app.post('/api/chat', async (req, res) => {
 
   for (const ep of endpoints) {
     try {
-      const response = await fetch(ep.url, {
+      const response = await fetchWithTimeout(ep.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,17 +124,19 @@ app.post('/api/chat', async (req, res) => {
 })
 
 // ===== PRONUNCIATION FEEDBACK =====
-app.post('/api/pronunciation', async (req, res) => {
+app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) => {
   const { spoken, target, language = 'cantonese' } = req.body
 
+  const safeSpoken = sanitize(spoken)
+  const safeTarget = sanitize(target)
   const prompt = language === 'cantonese'
-    ? `請評估以下廣東話發音。目標句子：「${target}」。學生讀出：「${spoken}」。
+    ? `請評估以下廣東話發音。目標句子：「${safeTarget}」。學生讀出：「${safeSpoken}」。
 請提供：1. 整體評分（0-100） 2. 錯誤嘅字詞 3. 改善建議（用廣東話）。回應格式：JSON {score, errors[], suggestions[]}`
-    : `请评估以下普通话发音。目标句子：「${target}」。学生读出：「${spoken}」。
+    : `请评估以下普通话发音。目标句子：「${safeTarget}」。学生读出：「${safeSpoken}」。
 请提供：1. 整体评分（0-100） 2. 错误的字词 3. 改善建议。回应格式：JSON {score, errors[], suggestions[]}`
 
   try {
-    const response = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+    const response = await fetchWithTimeout(`${OLLAMA_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -185,7 +215,7 @@ app.get('/api/scenarios', (req, res) => {
   res.json({ scenarios: scenarios[language] || scenarios.cantonese })
 })
 
-app.post('/api/scenario-start', async (req, res) => {
+app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
   const { scenarioId, language = 'cantonese' } = req.body
 
   const scenarioPrompts = {
@@ -208,7 +238,7 @@ app.post('/api/scenario-start', async (req, res) => {
   const prompt = scenarioPrompts[language]?.[scenarioId] || scenarioPrompts.cantonese.restaurant
 
   try {
-    const response = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+    const response = await fetchWithTimeout(`${OLLAMA_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -253,23 +283,29 @@ wss.on('connection', (ws) => {
       const msg = JSON.parse(data.toString())
 
       if (msg.type === 'chat') {
-        const response = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: msg.model || 'opencode-go/kimi-k2.6',
-            messages: msg.messages,
-            stream: false
+        try {
+          const response = await fetchWithTimeout(`${OLLAMA_URL}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: msg.model || 'opencode-go/kimi-k2.6',
+              messages: msg.messages,
+              stream: false
+            })
           })
-        })
 
-        if (response.ok) {
-          const data = await response.json()
-          ws.send(JSON.stringify({
-            type: 'chat-response',
-            content: data.choices?.[0]?.message?.content,
-            id: msg.id
-          }))
+          if (response.ok) {
+            const data = await response.json()
+            ws.send(JSON.stringify({
+              type: 'chat-response',
+              content: data.choices?.[0]?.message?.content,
+              id: msg.id
+            }))
+          } else {
+            ws.send(JSON.stringify({ type: 'error', error: `AI returned ${response.status}`, id: msg.id }))
+          }
+        } catch (err) {
+          ws.send(JSON.stringify({ type: 'error', error: err.message, id: msg.id }))
         }
       }
     } catch (e) {
@@ -279,6 +315,9 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => clients.delete(ws))
 })
+
+// ===== ERROR HANDLER (must be last) =====
+app.use(errorHandler)
 
 // ===== START =====
 server.listen(PORT, () => {
