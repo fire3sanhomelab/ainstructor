@@ -40,6 +40,43 @@ ainstructor/
 
 ---
 
+## 🏗️ Architecture
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Vue 3 (Nginx)
+    participant BE as Express :3456
+    participant AI as Ollama / LM Studio
+
+    U->>FE: Type / Speak
+    FE->>BE: POST /api/chat { messages }
+    BE->>AI: POST /v1/chat/completions
+    AI-->>BE: { choices: [{ message }] }
+    BE->>BE: Save to chat-history.json
+    BE-->>FE: { success, content }
+    FE-->>U: Display AI response
+
+    Note over FE,BE: WebSocket /ws for real-time chat
+```
+
+### Data Model
+
+```mermaid
+erDiagram
+    CHAT {
+        string id UUID
+        string language "cantonese | mandarin"
+        array messages "[{role, content}]"
+        string response
+        int timestamp Unix
+    }
+```
+
+---
+
 ## ✨ Features
 
 | Feature | Description |
