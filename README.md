@@ -222,6 +222,4 @@ make clean         # Clean artifacts
 
 ---
 
-## 📜 License
 
-MIT © San Fung
