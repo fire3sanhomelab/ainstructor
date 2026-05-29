@@ -180,10 +180,14 @@ app.get('/api/health', (req, res) => {
 })
 
 async function saveChatHistory(language, messages, response) {
-  const history = await readData('chat-history.json')
-  history.push({ id: uuidv4(), language, messages, response, timestamp: Date.now() })
-  if (history.length > 500) history.shift()
-  await writeData('chat-history.json', history)
+  try {
+    const history = await readData('chat-history.json')
+    history.push({ id: uuidv4(), language, messages, response, timestamp: Date.now() })
+    if (history.length > 500) history.shift()
+    await writeData('chat-history.json', history)
+  } catch (err) {
+    console.error('Failed to save chat history:', err.message)
+  }
 }
 
 // ===== CHAT =====
