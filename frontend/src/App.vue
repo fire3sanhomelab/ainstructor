@@ -31,6 +31,12 @@
         :key="currentLang"
         :language="currentLang" 
       />
+
+      <LiveTalking
+        v-else-if="currentTab === 'livetalking'"
+        :key="currentLang"
+        :language="currentLang"
+      />
       
       <ScenarioMode
         v-else-if="currentTab === 'scenario'"
@@ -60,6 +66,7 @@
 import { ref, onErrorCaptured } from 'vue'
 import LanguageSelector from './components/LanguageSelector.vue'
 import ChatInterface from './components/ChatInterface.vue'
+import LiveTalking from './components/LiveTalking.vue'
 import PronunciationPanel from './components/PronunciationPanel.vue'
 import ScenarioMode from './components/ScenarioMode.vue'
 import ProgressPanel from './components/ProgressPanel.vue'
@@ -81,6 +88,7 @@ onErrorCaptured((err, instance, info) => {
 
 const tabs = [
   { code: 'chat', label: '自由對話', icon: '💬' },
+  { code: 'livetalking', label: '即時通話', icon: '📞' },
   { code: 'scenario', label: '場景練習', icon: '🎭' },
   { code: 'pronunciation', label: '發音訓練', icon: '🎯' },
   { code: 'progress', label: '學習進度', icon: '📊' },
