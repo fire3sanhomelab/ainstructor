@@ -514,7 +514,7 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
         },
         body: JSON.stringify({
           model,
-          messages: [{ role: 'system', content: prompt }],
+          messages: [{ role: 'user', content: prompt }],
           stream: false,
           temperature: 0.8
         })
@@ -555,7 +555,7 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
         headers,
         body: JSON.stringify({
           model,
-          messages: [{ role: 'system', content: prompt }],
+          messages: [{ role: 'user', content: prompt }],
           stream: false,
           temperature: 0.8
         })
