@@ -17,8 +17,8 @@ defineProps(['modelValue'])
 defineEmits(['update:modelValue'])
 
 const languages = [
-  { code: 'cantonese', name: '廣東話', flag: '🇭🇰' },
-  { code: 'mandarin', name: '普通話', flag: '🇨🇳' }
+  { code: 'cantonese', name: '廣東話 (Cantonese)', flag: '🇭🇰' },
+  { code: 'mandarin', name: '普通話 (Mandarin)', flag: '🇨🇳' }
 ]
 </script>
 
@@ -26,11 +26,12 @@ const languages = [
 .language-selector {
   display: flex;
   gap: 0.5rem;
-  padding: 1rem;
-  background: white;
+  padding: 0.5rem;
+  background: rgba(20, 21, 33, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(10px);
 }
 
 .lang-btn {
@@ -40,16 +41,25 @@ const languages = [
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  border: 2px solid #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  background: white;
+  background: rgba(10, 11, 18, 0.5);
+  color: #94a3b8;
   cursor: pointer;
-  transition: all 0.2s;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lang-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
 }
 
 .lang-btn.active {
-  border-color: #4F46E5;
-  background: #eef2ff;
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.15);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.1);
 }
 
 .flag {
@@ -57,6 +67,6 @@ const languages = [
 }
 
 .name {
-  font-weight: 500;
+  font-weight: 600;
 }
 </style>

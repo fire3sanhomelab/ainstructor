@@ -1,7 +1,7 @@
 /**
  * ainstructor backend tests — run with: node --test backend/tests/
  */
-import { describe, it } from 'node:test'
+import { describe, it } from './runner.js'
 import assert from 'node:assert'
 
 // ----- Test validate middleware logic -----

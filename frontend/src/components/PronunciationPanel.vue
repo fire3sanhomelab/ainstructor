@@ -1,10 +1,9 @@
 <template>
   <div class="pronunciation-panel">
-    <h3>🎯 發音練習</h3>
+    <h3>🎯 發音練習 / Pronunciation</h3>
+    <p class="hint">{{ hintText }}</p>
     
     <div class="practice-section">
-      <p class="hint">{{ hintText }}</p>
-      
       <div class="phrase-card">
         <p class="phrase">{{ currentPhrase.text }}</p>
         <p class="pinyin">{{ currentPhrase.pinyin }}</p>
@@ -25,33 +24,46 @@
           @click="toggleRecording"
         >
           <span class="record-icon">{{ isRecording ? '⏹️' : '🎙️' }}</span>
-          <span>{{ isRecording ? '錄音中...' : '按住練習' }}</span>
+          <span>{{ isRecording ? '錄音中...' : '按住並讀出' }}</span>
         </button>
       </div>
       
-      <div v-if="spokenText" class="spoken-text">
-        <p><strong>你講咗：</strong>{{ spokenText }}</p>
+      <div v-if="spokenText" class="spoken-text animate-fade-in">
+        <p><strong>您講出嘅文字：</strong>{{ spokenText }}</p>
       </div>
       
-      <div v-if="feedback" class="feedback" :class="feedback.type">
+      <div v-if="feedback" class="feedback animate-scale-up" :class="feedback.type">
         <div class="feedback-header">
-          <span class="score">{{ feedback.score }}分</span>
-          <span class="grade">{{ gradeText }}</span>
+          <div class="score-circle">
+            <span class="score">{{ feedback.score }}</span>
+            <span class="score-lbl">分</span>
+          </div>
+          <div class="feedback-meta">
+            <span class="grade">{{ gradeText }}</span>
+            <span class="fallback-note" v-if="feedback.fallback">（演算法模擬評分）</span>
+          </div>
         </div>
+
         <div v-if="feedback.phonemes" class="phonemes">
           <span 
             v-for="(p, i) in feedback.phonemes" 
             :key="i"
-            :class="['phoneme', p.correct ? 'correct' : 'wrong']"
+            :class="['char-p', p.correct ? 'correct' : 'wrong']"
+            :title="p.correct ? '發音正確' : '發音偏差'"
           >
             {{ p.char }}
           </span>
         </div>
-        <ul v-if="feedback.suggestions" class="suggestions">
-          <li v-for="(s, i) in feedback.suggestions" :key="i">{{ s }}</li>
-        </ul>
+
+        <div class="suggestions-wrapper" v-if="feedback.suggestions && feedback.suggestions.length > 0">
+          <h5>💡 改善建議：</h5>
+          <ul class="suggestions">
+            <li v-for="(s, i) in feedback.suggestions" :key="i">{{ s }}</li>
+          </ul>
+        </div>
+        
         <p v-if="feedback.errors && feedback.errors.length > 0" class="errors">
-          <strong>注意：</strong>{{ feedback.errors.join('、') }}
+          <strong>⚠️ 需注意：</strong>{{ feedback.errors.join('、') }}
         </p>
       </div>
     </div>
@@ -60,7 +72,7 @@
       <div class="progress-bar">
         <div class="fill" :style="{ width: progressPercent + '%' }"></div>
       </div>
-      <p>{{ currentIndex + 1 }} / {{ phrases.length }}</p>
+      <p class="progress-lbl">句子：{{ currentIndex + 1 }} / {{ phrases.length }}</p>
     </div>
     
     <div class="nav-buttons">
@@ -76,18 +88,17 @@ import { useSpeechRecognition } from '../composables/useSpeechRecognition.js'
 
 const props = defineProps(['language'])
 
-const isRecording = ref(false)
 const currentIndex = ref(0)
 const feedback = ref(null)
 const spokenText = ref('')
 const abortController = ref(null)
 
-const { isRecording: speechRecording, toggle: toggleSpeech } = useSpeechRecognition()
+const { isRecording, toggle: toggleSpeech } = useSpeechRecognition()
 
 const hintText = computed(() => {
   return props.language === 'cantonese'
-    ? '跟住讀出下面嘅句子，AI 會評估你嘅發音準確度'
-    : '跟着读出下面的句子，AI 会评估你的发音准确度'
+    ? '點擊示範收聽標準發音，然後按住錄音鍵讀出句子，AI 會分析你嘅發音。'
+    : '点击示范收听标准发音，然后按住录音键读出句子，AI 会分析你的发音。'
 })
 
 const phrases = computed(() => {
@@ -124,13 +135,14 @@ const progressPercent = computed(() => {
 
 const gradeText = computed(() => {
   const score = feedback.value?.score || 0
-  if (score >= 90) return '優秀！🌟'
-  if (score >= 80) return '很好！👍'
-  if (score >= 60) return '不錯！💪'
-  return '再加油！🎯'
+  if (score >= 90) return '優秀！🌟 Perfect!'
+  if (score >= 80) return '很好！👍 Well done!'
+  if (score >= 60) return '不錯！💪 Good effort!'
+  return '再加油！🎯 Keep trying!'
 })
 
 function playAudio() {
+  speechSynthesis.cancel()
   const utterance = new SpeechSynthesisUtterance(currentPhrase.value.text)
   utterance.lang = props.language === 'cantonese' ? 'zh-HK' : 'zh-CN'
   utterance.rate = 0.85
@@ -138,19 +150,21 @@ function playAudio() {
 }
 
 function playAudioSlow() {
+  speechSynthesis.cancel()
   const utterance = new SpeechSynthesisUtterance(currentPhrase.value.text)
   utterance.lang = props.language === 'cantonese' ? 'zh-HK' : 'zh-CN'
-  utterance.rate = 0.5
+  utterance.rate = 0.55
   speechSynthesis.speak(utterance)
 }
 
 async function toggleRecording() {
-  if (speechRecording.value) {
+  if (isRecording.value) {
     toggleSpeech()
     return
   }
   feedback.value = null
   spokenText.value = ''
+  
   toggleSpeech({
     lang: props.language === 'cantonese' ? 'zh-HK' : 'zh-CN',
     onResult: async (transcript) => {
@@ -167,6 +181,10 @@ async function evaluatePronunciation(spoken) {
   if (abortController.value) abortController.value.abort()
   abortController.value = new AbortController()
 
+  // Load Settings
+  const savedSettings = localStorage.getItem('ai-instructor-settings')
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
+
   try {
     const res = await fetch('/api/pronunciation', {
       method: 'POST',
@@ -175,7 +193,9 @@ async function evaluatePronunciation(spoken) {
       body: JSON.stringify({
         spoken,
         target: currentPhrase.value.text,
-        language: props.language
+        language: props.language,
+        activeEngine: settings.activeEngine,
+        geminiApiKey: settings.geminiApiKey
       })
     })
 
@@ -187,10 +207,10 @@ async function evaluatePronunciation(spoken) {
         score: data.feedback.score,
         errors: data.feedback.errors || [],
         suggestions: data.feedback.suggestions || [],
-        phonemes: backendPhonemes
+        phonemes: backendPhonemes,
+        fallback: data.fallback || false
       }
 
-      // Save to stats
       savePracticeStats(data.feedback.score)
       return
     }
@@ -208,20 +228,24 @@ async function evaluatePronunciation(spoken) {
     type: similarity > 0.8 ? 'success' : similarity > 0.5 ? 'warning' : 'error',
     score: Math.round(similarity * 100),
     errors: [],
-    suggestions: similarity > 0.8 ? ['發音很好！'] : ['請再練習多幾次'],
-    phonemes: generatePhonemes(spoken, currentPhrase.value.text)
+    suggestions: similarity > 0.8 ? ['發音非常好！'] : ['請再嘗試練習，注意聲調'],
+    phonemes: generatePhonemes(spoken, currentPhrase.value.text),
+    fallback: true
   }
 
   savePracticeStats(Math.round(similarity * 100))
 }
 
 function generatePhonemes(spoken, target) {
-  const maxLen = Math.max(spoken.length, target.length)
+  const cleanSpoken = spoken.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?？。，、！]/g,"")
+  const cleanTarget = target.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?？。，、！]/g,"")
+  
   const phonemes = []
-  for (let i = 0; i < maxLen; i++) {
+  for (let i = 0; i < cleanTarget.length; i++) {
+    const char = cleanTarget[i]
     phonemes.push({
-      char: target[i] || ' ',
-      correct: i < spoken.length && spoken[i] === target[i]
+      char,
+      correct: cleanSpoken.includes(char)
     })
   }
   return phonemes
@@ -246,28 +270,15 @@ function calculateSimilarity(a, b) {
   return 1 - distance / maxLen
 }
 
-function sanitizeStats(stats) {
-  if (!stats || typeof stats !== 'object') return { practiceCount: 0, totalScore: 0, avgScore: 0, totalChats: 0, streakDays: 0, lastActivityDate: null }
-  const s = { practiceCount: 0, totalScore: 0, avgScore: 0, totalChats: 0, streakDays: 0, lastActivityDate: null }
-  if (typeof stats.practiceCount === 'number') s.practiceCount = Math.max(0, stats.practiceCount)
-  if (typeof stats.totalScore === 'number') s.totalScore = Math.max(0, stats.totalScore)
-  if (typeof stats.totalChats === 'number') s.totalChats = Math.max(0, stats.totalChats)
-  if (typeof stats.streakDays === 'number') s.streakDays = Math.max(0, stats.streakDays)
-  if (typeof stats.lastActivityDate === 'string') s.lastActivityDate = stats.lastActivityDate
-  s.avgScore = s.practiceCount > 0 ? Math.round(s.totalScore / s.practiceCount) : 0
-  return s
-}
-
 function savePracticeStats(score) {
   try {
     const saved = localStorage.getItem('learning-stats')
     const raw = saved ? JSON.parse(saved) : null
-    const stats = sanitizeStats(raw)
+    const stats = raw ? { ...raw } : { practiceCount: 0, totalScore: 0, avgScore: 0, totalChats: 0, streakDays: 0, lastActivityDate: null }
     stats.practiceCount = (stats.practiceCount || 0) + 1
     stats.totalScore = (stats.totalScore || 0) + score
     stats.avgScore = Math.round(stats.totalScore / stats.practiceCount)
 
-    // Update streak
     const today = new Date().toISOString().split('T')[0]
     if (stats.lastActivityDate) {
       const last = new Date(stats.lastActivityDate)
@@ -284,8 +295,6 @@ function savePracticeStats(score) {
     stats.lastActivityDate = today
 
     localStorage.setItem('learning-stats', JSON.stringify(stats))
-
-    // Log activity
     logActivity('pronunciation', score)
   } catch (e) {
     console.error('Save stats failed:', e)
@@ -346,42 +355,50 @@ watch(() => props.language, () => {
 
 <style scoped>
 .pronunciation-panel {
-  background: white;
-  border-radius: 12px;
+  background: rgba(20, 21, 33, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
   padding: 1.5rem;
-  margin-top: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-.pronunciation-panel h3 {
-  margin-bottom: 1rem;
-  color: #4F46E5;
+h3 {
+  color: #a855f7;
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .hint {
-  color: #6b7280;
+  color: #94a3b8;
   font-size: 0.9rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .phrase-card {
-  background: #f9fafb;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.01);
 }
 
 .phrase {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
   margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
 }
 
 .pinyin {
-  color: #6b7280;
-  font-size: 1rem;
-  margin-bottom: 1rem;
+  color: #38bdf8;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 1.05rem;
+  margin-bottom: 1.25rem;
 }
 
 .phrase-actions {
@@ -391,47 +408,66 @@ watch(() => props.language, () => {
 }
 
 .play-btn, .slow-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   border: none;
   border-radius: 20px;
-  background: #4F46E5;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: white;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
 }
 
-.play-btn:focus-visible,
-.slow-btn:focus-visible,
-.record-btn:focus-visible,
-.nav-buttons button:focus-visible {
-  outline: 2px solid #4F46E5;
-  outline-offset: 2px;
+.play-btn:hover, .slow-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
 }
 
 .slow-btn {
-  background: #8B5CF6;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.25);
+}
+
+.slow-btn:hover {
+  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
 }
 
 .record-section {
   text-align: center;
-  margin: 1rem 0;
+  margin: 1.5rem 0;
 }
 
 .record-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 2rem;
-  border: 3px solid #e5e7eb;
+  gap: 0.75rem;
+  padding: 1rem 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 50px;
-  background: white;
+  color: #f1f5f9;
   cursor: pointer;
   font-size: 1.1rem;
-  transition: all 0.2s;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.record-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .record-btn.recording {
   border-color: #ef4444;
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.15);
+  color: white;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
 }
 
 .record-icon {
@@ -439,92 +475,143 @@ watch(() => props.language, () => {
 }
 
 .spoken-text {
-  padding: 0.75rem;
-  background: #eef2ff;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: #cbd5e1;
 }
 
+/* Feedback Styling */
 .feedback {
-  padding: 1rem;
-  border-radius: 8px;
-  margin: 1rem 0;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+  backdrop-filter: blur(8px);
 }
 
 .feedback.success {
-  background: #d1fae5;
-  color: #065f46;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #a7f3d0;
 }
 
 .feedback.warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #fde68a;
 }
 
 .feedback.error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
 }
 
 .feedback-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.score-circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 4px solid currentColor;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
 }
 
 .score {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.score-lbl {
+  font-size: 0.65rem;
+  font-weight: bold;
+}
+
+.feedback-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .grade {
-  font-size: 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.fallback-note {
+  font-size: 0.75rem;
+  opacity: 0.6;
 }
 
 .phonemes {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
-  margin: 0.5rem 0;
+  gap: 0.35rem;
+  margin: 1rem 0;
   justify-content: center;
 }
 
-.phoneme {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 1.2rem;
+.char-p {
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.phoneme.correct {
-  background: #6ee7b7;
+.char-p.correct {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.phoneme.wrong {
-  background: #fca5a5;
+.char-p.wrong {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.suggestions-wrapper h5 {
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+  color: #cbd5e1;
 }
 
 .suggestions {
-  margin-top: 0.5rem;
   padding-left: 1.2rem;
+  font-size: 0.9rem;
+  color: #94a3b8;
 }
 
 .suggestions li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .errors {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
 }
 
+/* Progress Section */
 .progress {
-  margin: 1rem 0;
+  margin: 1.5rem 0;
 }
 
 .progress-bar {
   height: 8px;
-  background: #e5e7eb;
+  background: rgba(255,255,255,0.05);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -532,26 +619,60 @@ watch(() => props.language, () => {
 
 .fill {
   height: 100%;
-  background: linear-gradient(90deg, #4F46E5, #7C3AED);
-  transition: width 0.3s;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.progress-lbl {
+  text-align: right;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* Navigation Buttons */
 .nav-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .nav-buttons button {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  background: white;
+  background: rgba(255, 255, 255, 0.03);
+  color: #e2e8f0;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-buttons button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
 }
 
 .nav-buttons button:disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 </style>

@@ -1,3 +1,13 @@
+import { webcrypto } from 'node:crypto'
+if (typeof globalThis.crypto === 'undefined' || !globalThis.crypto.getRandomValues) {
+  Object.defineProperty(globalThis, 'crypto', {
+    value: webcrypto,
+    configurable: true,
+    enumerable: true,
+    writable: true
+  })
+}
+
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
