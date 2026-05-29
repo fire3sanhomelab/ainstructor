@@ -37,7 +37,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ainstructor.rule=PathPrefix(`/ainstructor`)"
-      - "traefik.http.routers.ainstructor.middlewares=auto-strip-prefix@file"
+      - "traefik.http.middlewares.ainstructor-strip.stripprefix.prefixes=/ainstructor"
+      - "traefik.http.routers.ainstructor.middlewares=ainstructor-strip"
       - "traefik.http.services.ainstructor.loadbalancer.server.port=8088"
 
 networks:
