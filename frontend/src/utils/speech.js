@@ -14,7 +14,7 @@ if (typeof window !== 'undefined' && window.speechSynthesis) {
  * @param {string} language 'cantonese' or 'mandarin'
  * @param {number} rate Speed rate (default 0.85)
  */
-export function speakText(text, language, rate = 0.85) {
+export function speakText(text, language, rate = 0.85, onEnd = null) {
   if (!window.speechSynthesis) return
   
   // Stop any ongoing speech
@@ -24,6 +24,11 @@ export function speakText(text, language, rate = 0.85) {
   const langCode = language === 'cantonese' ? 'zh-HK' : 'zh-CN'
   utterance.lang = langCode
   utterance.rate = rate
+
+  if (onEnd) {
+    utterance.onend = onEnd
+    utterance.onerror = onEnd
+  }
 
   const voices = speechSynthesis.getVoices()
   

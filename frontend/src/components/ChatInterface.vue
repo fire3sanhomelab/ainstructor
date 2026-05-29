@@ -6,7 +6,10 @@
         <span class="status-text">{{ isOnline ? '後端已連線' : '後端離線' }}</span>
         <span class="engine-tag" v-if="currentEngine">{{ currentEngine }}</span>
       </div>
-      <button class="clear-btn" @click="clearChat">🗑️ 清空對話</button>
+      <div class="status-actions">
+        <button class="live-toggle-btn" @click="startLiveMode" :disabled="!isOnline" title="開啟免手動語音連貫對話">🎙️ 連貫對話 / Live</button>
+        <button class="clear-btn" @click="clearChat">🗑️ 清空對話</button>
+      </div>
     </div>
     
     <div class="messages" ref="messagesContainer">
@@ -119,6 +122,40 @@
         </div>
       </div>
     </div>
+
+    <!-- Live Conversation Overlay -->
+    <div v-if="isLiveMode" class="live-mode-overlay animate-fade-in">
+      <div class="live-card glass-card animate-scale-up">
+        <div class="live-header">
+          <span class="live-badge">🔴 LIVE</span>
+          <h4>即時連貫對話 / Voice Mode</h4>
+        </div>
+        
+        <div class="live-body">
+          <div class="wave-container">
+            <div class="pulse-ring" :class="liveState"></div>
+            <div class="pulse-ring-inner" :class="liveState"></div>
+            <div class="live-avatar" :class="liveState">
+              <span v-if="liveState === 'listening'">🎙️</span>
+              <span v-else-if="liveState === 'thinking'">⚡</span>
+              <span v-else-if="liveState === 'speaking'">🔊</span>
+              <span v-else>🤖</span>
+            </div>
+          </div>
+          
+          <div class="live-status">
+            <p class="status-msg">{{ liveStatusText }}</p>
+            <p class="status-sub">{{ liveStatusSubText }}</p>
+          </div>
+        </div>
+        
+        <div class="live-footer">
+          <button class="end-live-btn" @click="stopLiveMode">
+            ❌ 結束對話 / End Live
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -143,12 +180,36 @@ const autoTTS = ref(false)
 const currentEngine = ref('')
 const onlineCheckInterval = ref(null)
 
+// Live Conversation Mode state
+const isLiveMode = ref(false)
+const liveState = ref('idle') // 'listening', 'thinking', 'speaking', 'idle'
+
+const liveStatusText = computed(() => {
+  const texts = {
+    listening: props.language === 'cantonese' ? '請說話... 系統正在傾聽中' : '请说话... 系统正在倾听中',
+    thinking: props.language === 'cantonese' ? '導師思考中...' : '导师思考中...',
+    speaking: props.language === 'cantonese' ? '導師正在發音回應...' : '导师正在发音回应...',
+    idle: props.language === 'cantonese' ? '準備就緒' : '准备就绪'
+  }
+  return texts[liveState.value] || '請說話...'
+})
+
+const liveStatusSubText = computed(() => {
+  const texts = {
+    listening: props.language === 'cantonese' ? '講完後請稍停，系統會自動發送' : '说完后请稍停，系统会自动发送',
+    thinking: 'AI is thinking...',
+    speaking: 'Auto-playing voice feedback',
+    idle: ''
+  }
+  return texts[liveState.value] || ''
+})
+
 // Analysis Modal state
 const showAnalysisModal = ref(false)
 const isAnalyzing = ref(false)
 const activeExplanation = ref(null)
 
-const { isRecording, toggle: toggleSpeech } = useSpeechRecognition()
+const { isRecording, toggle: toggleSpeech, stop: stopSpeech } = useSpeechRecognition()
 
 const placeholderText = computed(() => {
   const hints = {
@@ -180,6 +241,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   cancelRequests()
+  stopLiveMode()
   if (onlineCheckInterval.value) {
     clearInterval(onlineCheckInterval.value)
   }
@@ -308,6 +370,120 @@ async function sendMessage() {
   } finally {
     isLoading.value = false
     scrollToBottom()
+  }
+}
+
+function startLiveMode() {
+  isLiveMode.value = true
+  autoTTS.value = true
+  startListeningForLive()
+}
+
+function stopLiveMode() {
+  isLiveMode.value = false
+  liveState.value = 'idle'
+  stopSpeech()
+  window.speechSynthesis.cancel()
+}
+
+function startListeningForLive() {
+  if (!isLiveMode.value) return
+  liveState.value = 'listening'
+  
+  toggleSpeech({
+    lang: props.language === 'cantonese' ? 'zh-HK' : 'zh-CN',
+    onResult: (transcript) => {
+      if (!isLiveMode.value) return
+      sendLiveMessage(transcript)
+    },
+    onError: (err) => {
+      console.warn('Speech recognition error in Live Mode:', err)
+      if (isLiveMode.value) {
+        setTimeout(startListeningForLive, 1000)
+      }
+    }
+  })
+}
+
+async function sendLiveMessage(text) {
+  if (!text || !text.trim()) {
+    startListeningForLive()
+    return
+  }
+  
+  addMessage({
+    role: 'user',
+    content: text,
+    timestamp: Date.now()
+  })
+  
+  isLoading.value = true
+  liveState.value = 'thinking'
+  saveHistory()
+  
+  const controller = createAbortController()
+  const savedSettings = localStorage.getItem('ai-instructor-settings')
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+
+  try {
+    const response = await fetch(getApiUrl('api/chat'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        language: props.language,
+        messages: messages.value.slice(-10).map(m => ({
+          role: m.role,
+          content: m.content
+        })),
+        activeEngine: settings.activeEngine,
+        geminiApiKey: settings.geminiApiKey,
+        opencodeApiKey: settings.opencodeApiKey,
+        model: settings.modelName || 'minimax-m2.7'
+      })
+    })
+    
+    if (response.ok && isLiveMode.value) {
+      const data = await response.json()
+      
+      const assistantMsg = {
+        role: 'assistant',
+        content: data.content,
+        timestamp: Date.now()
+      }
+      
+      addMessage(assistantMsg)
+      saveHistory()
+      recordActivity('chat')
+      
+      // Update engine label
+      const engineLabels = {
+        'ollama': 'Ollama',
+        'llm-studio': 'LM Studio',
+        'opencode': 'OpenCode Go',
+        'gemini': 'Gemini AI',
+        'gemini-fallback': 'Gemini AI',
+        'demo-mock': '離線模擬'
+      }
+      currentEngine.value = engineLabels[data.endpoint] || ''
+
+      liveState.value = 'speaking'
+      speakText(data.content, props.language, 0.85, () => {
+        if (isLiveMode.value) {
+          startListeningForLive()
+        }
+      })
+    } else {
+      throw new Error('Backend failed')
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') return
+    console.error('Live chat error:', error)
+    if (isLiveMode.value) {
+      setTimeout(startListeningForLive, 1500)
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -878,5 +1054,224 @@ input:disabled {
 
 .vocab-table .meaning {
   color: #cbd5e1;
+}
+
+/* Live Mode Overlay Styles */
+.live-mode-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 11, 20, 0.9);
+  backdrop-filter: blur(16px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.live-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(20, 21, 33, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.live-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.live-badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  animation: heartbeat 1.5s infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.live-header h4 {
+  color: #f1f5f9;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.wave-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.live-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.live-avatar.listening {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.live-avatar.thinking {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.live-avatar.speaking {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.pulse-ring, .pulse-ring-inner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  z-index: 1;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.pulse-ring.listening {
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  animation: pulse-out 2s infinite ease-out;
+}
+.pulse-ring-inner.listening {
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  animation: pulse-out 2s infinite ease-out 1s;
+}
+
+.pulse-ring.thinking {
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  animation: pulse-rotate 1.5s infinite linear;
+}
+
+.pulse-ring.speaking {
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  animation: pulse-out 1.8s infinite ease-out;
+}
+.pulse-ring-inner.speaking {
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  animation: pulse-out 1.8s infinite ease-out 0.9s;
+}
+
+@keyframes pulse-out {
+  0% { transform: scale(0.6); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+@keyframes pulse-rotate {
+  0% { transform: rotate(0deg) scale(0.9); opacity: 0.5; border-radius: 40% 60% 60% 40% / 40% 40% 60% 60%; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 0.8; border-radius: 60% 40% 40% 60% / 60% 60% 40% 40%; }
+  100% { transform: rotate(360deg) scale(0.9); opacity: 0.5; border-radius: 40% 60% 60% 40% / 40% 40% 60% 60%; }
+}
+
+.live-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.status-msg {
+  color: #f1f5f9;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.status-sub {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.live-footer {
+  width: 100%;
+}
+
+.end-live-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transition: all 0.2s ease;
+}
+
+.end-live-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
+}
+
+.end-live-btn:active {
+  transform: translateY(0);
+}
+
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.live-toggle-btn {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 6px;
+  background: rgba(168, 85, 247, 0.1);
+  color: #c084fc;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.live-toggle-btn:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.2);
+  color: white;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.live-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
