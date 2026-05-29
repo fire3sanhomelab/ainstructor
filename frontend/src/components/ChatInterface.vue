@@ -127,6 +127,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useChatMessages } from '../composables/useChatMessages.js'
 import { useSpeechRecognition } from '../composables/useSpeechRecognition.js'
 import { getApiUrl } from '../utils/api.js'
+import { speakText as speakTextUtil } from '../utils/speech.js'
 
 const props = defineProps(['language'])
 
@@ -401,13 +402,7 @@ function recordActivity(type) {
 }
 
 function speakText(text) {
-  if (!window.speechSynthesis) return
-  // Stop existing TTS first
-  speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = props.language === 'cantonese' ? 'zh-HK' : 'zh-CN'
-  utterance.rate = 0.85
-  speechSynthesis.speak(utterance)
+  speakTextUtil(text, props.language)
 }
 
 function toggleRecording() {

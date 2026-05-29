@@ -151,6 +151,7 @@
 import { ref, computed, nextTick, watch, onUnmounted } from 'vue'
 import { useSpeechRecognition } from '../composables/useSpeechRecognition.js'
 import { getApiUrl } from '../utils/api.js'
+import { speakText as speakTextUtil } from '../utils/speech.js'
 
 const props = defineProps(['language'])
 
@@ -457,12 +458,7 @@ async function analyzeMessage(text) {
 }
 
 function speakText(text) {
-  if (!window.speechSynthesis) return
-  speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = props.language === 'cantonese' ? 'zh-HK' : 'zh-CN'
-  utterance.rate = 0.85
-  speechSynthesis.speak(utterance)
+  speakTextUtil(text, props.language)
 }
 
 function toggleRecording() {
