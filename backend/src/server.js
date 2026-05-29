@@ -193,7 +193,7 @@ async function saveChatHistory(language, messages, response) {
 // ===== CHAT =====
 app.post('/api/chat', validate(['messages']), async (req, res) => {
   const { messages, language = 'cantonese', scenarioId = null } = req.body
-  const model = 'opencode-go/minimax-m2.7'
+  const model = 'minimax-m2.7'
   const activeEngine = 'opencode'
   const opencodeKey = OPENCODE_API_KEY
 
@@ -311,7 +311,7 @@ app.post('/api/chat', validate(['messages']), async (req, res) => {
 // ===== PRONUNCIATION FEEDBACK =====
 app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) => {
   const { spoken, target, language = 'cantonese' } = req.body
-  const model = 'opencode-go/minimax-m2.7'
+  const model = 'minimax-m2.7'
   const activeEngine = 'opencode'
   const opencodeKey = OPENCODE_API_KEY
 
@@ -469,7 +469,7 @@ app.get('/api/scenarios', (req, res) => {
 
 app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
   const { scenarioId, language = 'cantonese' } = req.body
-  const model = 'opencode-go/minimax-m2.7'
+  const model = 'minimax-m2.7'
   const activeEngine = 'opencode'
   const opencodeKey = OPENCODE_API_KEY
 
@@ -595,7 +595,7 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
 // ===== EXPLAIN SENTENCE =====
 app.post('/api/explain', validate(['text']), async (req, res) => {
   const { text, language = 'cantonese' } = req.body
-  const model = 'opencode-go/minimax-m2.7'
+  const model = 'minimax-m2.7'
   const activeEngine = 'opencode'
   const opencodeKey = OPENCODE_API_KEY
 
@@ -744,7 +744,7 @@ wss.on('connection', (ws) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              model: msg.model || 'opencode-go/minimax-m2.7',
+              model: msg.model || 'minimax-m2.7',
               messages: msg.messages,
               stream: false
             })

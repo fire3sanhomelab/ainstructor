@@ -147,7 +147,7 @@ Content-Type: application/json
 {
   "messages": [{ "role": "user", "content": "你好" }],
   "language": "cantonese",
-  "model": "opencode-go/minimax-m2.7"
+  "model": "minimax-m2.7"
 }
 ```
 

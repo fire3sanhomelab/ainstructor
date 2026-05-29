@@ -239,7 +239,7 @@ async function sendMessage() {
   
   // Load AI Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const response = await fetch(getApiUrl('api/chat'), {
@@ -255,7 +255,7 @@ async function sendMessage() {
         activeEngine: settings.activeEngine,
         geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
-        model: settings.modelName || 'opencode-go/minimax-m2.7'
+        model: settings.modelName || 'minimax-m2.7'
       })
     })
     
