@@ -126,6 +126,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useChatMessages } from '../composables/useChatMessages.js'
 import { useSpeechRecognition } from '../composables/useSpeechRecognition.js'
+import { getApiUrl } from '../utils/api.js'
 
 const props = defineProps(['language'])
 
@@ -209,7 +210,7 @@ function clearChat() {
 
 async function checkOnline() {
   try {
-    const res = await fetch('api/health')
+    const res = await fetch(getApiUrl('api/health'))
     isOnline.value = res.ok
   } catch {
     isOnline.value = false
@@ -237,10 +238,10 @@ async function sendMessage() {
   
   // Load AI Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
 
   try {
-    const response = await fetch('api/chat', {
+    const response = await fetch(getApiUrl('api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -252,6 +253,7 @@ async function sendMessage() {
         })),
         activeEngine: settings.activeEngine,
         geminiApiKey: settings.geminiApiKey,
+        opencodeApiKey: settings.opencodeApiKey,
         model: settings.modelName || 'opencode-go/kimi-k2.6'
       })
     })
@@ -263,6 +265,7 @@ async function sendMessage() {
       const engineLabels = {
         'ollama': 'Ollama',
         'llm-studio': 'LM Studio',
+        'opencode': 'OpenCode Go',
         'gemini': 'Gemini AI',
         'gemini-fallback': 'Gemini AI',
         'demo-mock': '離線模擬'
@@ -314,17 +317,18 @@ async function analyzeMessage(text) {
 
   // Load AI Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '' }
 
   try {
-    const res = await fetch('api/explain', {
+    const res = await fetch(getApiUrl('api/explain'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey
+        geminiApiKey: settings.geminiApiKey,
+        opencodeApiKey: settings.opencodeApiKey
       })
     })
 

@@ -150,6 +150,7 @@
 <script setup>
 import { ref, computed, nextTick, watch, onUnmounted } from 'vue'
 import { useSpeechRecognition } from '../composables/useSpeechRecognition.js'
+import { getApiUrl } from '../utils/api.js'
 
 const props = defineProps(['language'])
 
@@ -266,7 +267,7 @@ async function loadScenarios() {
   isScenariosLoading.value = true
   const controller = new AbortController()
   try {
-    const res = await fetch(`api/scenarios?language=${props.language}`, {
+    const res = await fetch(getApiUrl(`api/scenarios?language=${props.language}`), {
       signal: controller.signal
     })
     if (res.ok) {
@@ -310,10 +311,10 @@ async function startScenario(scenario) {
   
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
 
   try {
-    const res = await fetch('api/scenario-start', {
+    const res = await fetch(getApiUrl('api/scenario-start'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,
@@ -321,7 +322,9 @@ async function startScenario(scenario) {
         scenarioId: scenario.id,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey
+        geminiApiKey: settings.geminiApiKey,
+        opencodeApiKey: settings.opencodeApiKey,
+        model: settings.modelName || 'opencode-go/kimi-k2.6'
       })
     })
     
@@ -371,10 +374,10 @@ async function sendMessage() {
   
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
 
   try {
-    const res = await fetch('api/chat', {
+    const res = await fetch(getApiUrl('api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,
@@ -386,6 +389,7 @@ async function sendMessage() {
         })),
         activeEngine: settings.activeEngine,
         geminiApiKey: settings.geminiApiKey,
+        opencodeApiKey: settings.opencodeApiKey,
         scenarioId: activeScenario.value.id,
         model: settings.modelName || 'opencode-go/kimi-k2.6'
       })
@@ -418,17 +422,19 @@ async function analyzeMessage(text) {
   showAnalysisModal.value = true
 
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
 
   try {
-    const res = await fetch('api/explain', {
+    const res = await fetch(getApiUrl('api/explain'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey
+        geminiApiKey: settings.geminiApiKey,
+        opencodeApiKey: settings.opencodeApiKey,
+        model: settings.modelName || 'opencode-go/kimi-k2.6'
       })
     })
 

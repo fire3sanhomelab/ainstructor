@@ -20,6 +20,7 @@ const PORT = process.env.PORT || 3456
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
 const LLM_STUDIO_URL = process.env.LLM_STUDIO_URL || 'http://192.168.1.100:1234'
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
+const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY || 'sk-spmGe7ThbClaKqTZWopntoOPpuXkTikikSRkNq7iMAjcWxRSMANUrpD8gPXuibBg'
 
 // ===== APP SETUP =====
 const app = express()
@@ -187,7 +188,7 @@ async function saveChatHistory(language, messages, response) {
 
 // ===== CHAT =====
 app.post('/api/chat', validate(['messages']), async (req, res) => {
-  const { messages, language = 'cantonese', model = 'opencode-go/kimi-k2.6', geminiApiKey = '', activeEngine = '', scenarioId = null } = req.body
+  const { messages, language = 'cantonese', model = 'opencode-go/kimi-k2.6', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', scenarioId = null } = req.body
 
   const systemPrompts = {
     cantonese: '你係一位專業嘅廣東話導師。請用純正廣東話（口語化）回應。當學生講錯時，請溫柔地糾正發音同語法。保持耐心，鼓勵學生多講。',
@@ -195,8 +196,43 @@ app.post('/api/chat', validate(['messages']), async (req, res) => {
   }
   const systemPrompt = systemPrompts[language] || systemPrompts.cantonese;
   const activeKey = geminiApiKey || GEMINI_API_KEY;
+  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
 
-  // 1. If user explicitly chose Gemini
+  // 1. If user chose OpenCode
+  if (activeEngine === 'opencode' && opencodeKey) {
+    try {
+      const response = await fetchWithTimeout('https://opencode.ai/zen/go/v1/chat/completions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${opencodeKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          stream: false,
+          temperature: 0.7
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || data.response;
+        await saveChatHistory(language, messages, content);
+        return res.json({ success: true, content, endpoint: 'opencode' });
+      } else {
+        const errText = await response.text();
+        throw new Error(`OpenCode API returned ${response.status}: ${errText}`);
+      }
+    } catch (e) {
+      console.error('OpenCode call failed:', e.message);
+    }
+  }
+
+  // 2. If user explicitly chose Gemini
   if (activeEngine === 'gemini' && activeKey) {
     try {
       const content = await callGemini(messages, systemPrompt, activeKey);
@@ -207,7 +243,7 @@ app.post('/api/chat', validate(['messages']), async (req, res) => {
     }
   }
 
-  // 2. If user explicitly chose local (or default)
+  // 3. If user explicitly chose local (or default)
   if (activeEngine !== 'demo') {
     const endpoints = [];
     if (activeEngine === 'ollama' || !activeEngine) {
@@ -219,9 +255,13 @@ app.post('/api/chat', validate(['messages']), async (req, res) => {
 
     for (const ep of endpoints) {
       try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (opencodeKey) {
+          headers['Authorization'] = `Bearer ${opencodeKey}`;
+        }
         const response = await fetchWithTimeout(ep.url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             model,
             messages: [
@@ -264,7 +304,7 @@ app.post('/api/chat', validate(['messages']), async (req, res) => {
 
 // ===== PRONUNCIATION FEEDBACK =====
 app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) => {
-  const { spoken, target, language = 'cantonese', geminiApiKey = '', activeEngine = '' } = req.body
+  const { spoken, target, language = 'cantonese', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', model = 'opencode-go/kimi-k2.6' } = req.body
 
   const safeSpoken = sanitize(spoken)
   const safeTarget = sanitize(target)
@@ -275,8 +315,40 @@ app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) 
 请提供：1. 整体评分（0-100） 2. 错误的字词 3. 改善建议。回应格式：JSON {score, errors[], suggestions[]}`
 
   const activeKey = geminiApiKey || GEMINI_API_KEY;
+  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
 
-  // 1. If user explicitly chose Gemini
+  // 1. If user chose OpenCode
+  if (activeEngine === 'opencode' && opencodeKey) {
+    try {
+      const response = await fetchWithTimeout('https://opencode.ai/zen/go/v1/chat/completions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${opencodeKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          stream: false,
+          temperature: 0.3
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || data.response;
+        const feedback = parseJsonFeedback(content);
+        return res.json({ success: true, feedback });
+      } else {
+        const errText = await response.text();
+        throw new Error(`OpenCode API returned ${response.status}: ${errText}`);
+      }
+    } catch (e) {
+      console.error('OpenCode pronunciation eval failed:', e.message);
+    }
+  }
+
+  // 2. If user explicitly chose Gemini
   if (activeEngine === 'gemini' && activeKey) {
     try {
       const content = await callGemini([{ role: 'user', content: prompt }], null, activeKey);
@@ -287,14 +359,18 @@ app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) 
     }
   }
 
-  // 2. Try Local if not demo/mock
+  // 3. Try Local if not demo/mock
   if (activeEngine !== 'demo') {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (opencodeKey) {
+        headers['Authorization'] = `Bearer ${opencodeKey}`;
+      }
       const response = await fetchWithTimeout(`${OLLAMA_URL}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          model: 'opencode-go/kimi-k2.6',
+          model,
           messages: [{ role: 'user', content: prompt }],
           stream: false,
           temperature: 0.3
@@ -312,7 +388,7 @@ app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) 
     }
   }
 
-  // 3. Fallback to Gemini if key is present
+  // 4. Fallback to Gemini if key is present
   if (activeEngine !== 'demo' && activeKey) {
     try {
       const content = await callGemini([{ role: 'user', content: prompt }], null, activeKey);
@@ -384,7 +460,7 @@ app.get('/api/scenarios', (req, res) => {
 })
 
 app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
-  const { scenarioId, language = 'cantonese', geminiApiKey = '', activeEngine = '' } = req.body
+  const { scenarioId, language = 'cantonese', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', model = 'opencode-go/kimi-k2.6' } = req.body
 
   const scenarioPrompts = {
     cantonese: {
@@ -405,8 +481,39 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
 
   const prompt = scenarioPrompts[language]?.[scenarioId] || scenarioPrompts.cantonese.restaurant
   const activeKey = geminiApiKey || GEMINI_API_KEY;
+  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
 
-  // 1. Gemini
+  // 1. OpenCode
+  if (activeEngine === 'opencode' && opencodeKey) {
+    try {
+      const response = await fetchWithTimeout('https://opencode.ai/zen/go/v1/chat/completions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${opencodeKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'system', content: prompt }],
+          stream: false,
+          temperature: 0.8
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+        return res.json({ success: true, message: content });
+      } else {
+        const errText = await response.text();
+        throw new Error(`OpenCode API returned ${response.status}: ${errText}`);
+      }
+    } catch (e) {
+      console.error('OpenCode scenario start failed:', e.message);
+    }
+  }
+
+  // 2. Gemini
   if (activeEngine === 'gemini' && activeKey) {
     try {
       const content = await callGemini([{ role: 'user', content: '開始對話。' }], prompt, activeKey);
@@ -416,14 +523,18 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
     }
   }
 
-  // 2. Local
+  // 3. Local
   if (activeEngine !== 'demo') {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (opencodeKey) {
+        headers['Authorization'] = `Bearer ${opencodeKey}`;
+      }
       const response = await fetchWithTimeout(`${OLLAMA_URL}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          model: 'opencode-go/kimi-k2.6',
+          model,
           messages: [{ role: 'system', content: prompt }],
           stream: false,
           temperature: 0.8
@@ -440,7 +551,7 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
     }
   }
 
-  // 3. Fallback to Gemini
+  // 4. Fallback to Gemini
   if (activeEngine !== 'demo' && activeKey) {
     try {
       const content = await callGemini([{ role: 'user', content: '開始對話。' }], prompt, activeKey);
@@ -473,7 +584,7 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
 
 // ===== EXPLAIN SENTENCE =====
 app.post('/api/explain', validate(['text']), async (req, res) => {
-  const { text, language = 'cantonese', geminiApiKey = '', activeEngine = '' } = req.body
+  const { text, language = 'cantonese', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', model = 'opencode-go/kimi-k2.6' } = req.body
 
   const prompt = language === 'cantonese'
     ? `請分析以下廣東話句子：「${sanitize(text)}」。
@@ -484,6 +595,38 @@ app.post('/api/explain', validate(['text']), async (req, res) => {
 请以 JSON 格式回应，格式必须为：{"translation": "...", "pronunciation": "...", "vocabulary": [{"word": "...", "pinyin": "...", "meaning": "..."}]}`
 
   const activeKey = geminiApiKey || GEMINI_API_KEY;
+  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
+
+  // 1. OpenCode
+  if (activeEngine === 'opencode' && opencodeKey) {
+    try {
+      const response = await fetchWithTimeout('https://opencode.ai/zen/go/v1/chat/completions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${opencodeKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          stream: false,
+          temperature: 0.3
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || data.response;
+        const explanation = parseJsonExplanation(content);
+        return res.json({ success: true, explanation });
+      } else {
+        const errText = await response.text();
+        throw new Error(`OpenCode API returned ${response.status}: ${errText}`);
+      }
+    } catch (e) {
+      console.error('OpenCode explanation failed:', e.message);
+    }
+  }
 
   // Try Gemini
   if (activeEngine === 'gemini' && activeKey) {
@@ -499,11 +642,15 @@ app.post('/api/explain', validate(['text']), async (req, res) => {
   // Try Local
   if (activeEngine !== 'demo') {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (opencodeKey) {
+        headers['Authorization'] = `Bearer ${opencodeKey}`;
+      }
       const response = await fetchWithTimeout(`${OLLAMA_URL}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          model: 'opencode-go/kimi-k2.6',
+          model,
           messages: [{ role: 'user', content: prompt }],
           stream: false,
           temperature: 0.3

@@ -44,9 +44,19 @@ export default defineConfig({
         target: 'http://localhost:3456',
         changeOrigin: true
       },
+      '/ainstructor/api': {
+        target: 'http://localhost:3456',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ainstructor/, '')
+      },
       '/ws': {
         target: 'ws://localhost:3456',
         ws: true
+      },
+      '/ainstructor/ws': {
+        target: 'ws://localhost:3456',
+        ws: true,
+        rewrite: (path) => path.replace(/^\/ainstructor/, '')
       }
     }
   }

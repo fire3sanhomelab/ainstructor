@@ -9,14 +9,15 @@
         <select v-model="settings.activeEngine" @change="saveSettings">
           <option value="demo">✨ 離線模擬 (無需 API 金鑰 / Mock Demo)</option>
           <option value="gemini">☁️ Google Gemini API (雲端極速)</option>
+          <option value="opencode">🧠 OpenCode Go (Kimi)</option>
           <option value="ollama">🖥️ Ollama (本地運行)</option>
           <option value="llm-studio">🖥️ LM Studio (本地運行)</option>
         </select>
       </div>
 
-      <div v-if="settings.activeEngine === 'ollama' || settings.activeEngine === 'llm-studio'" class="form-group animate-slide-down">
+      <div v-if="settings.activeEngine === 'ollama' || settings.activeEngine === 'llm-studio' || settings.activeEngine === 'opencode'" class="form-group animate-slide-down">
         <label>
-          本地模型名稱 / Local Model Name
+          本地/雲端模型名稱 / Model Name
           <span class="hint">(例如: opencode-go/kimi-k2.6)</span>
         </label>
         <input 
@@ -41,6 +42,24 @@
           />
           <button class="toggle-btn" @click="showKey = !showKey">
             {{ showKey ? '🙈' : '👁️' }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="settings.activeEngine === 'opencode'" class="form-group animate-slide-down">
+        <label>
+          OpenCode API 金鑰
+          <span class="hint">可以留空，默認將使用後端配置的金鑰</span>
+        </label>
+        <div class="input-wrapper">
+          <input 
+            v-model="settings.opencodeApiKey" 
+            :type="showOpenCodeKey ? 'text' : 'password'" 
+            placeholder="sk-..." 
+            @input="saveSettings"
+          />
+          <button class="toggle-btn" @click="showOpenCodeKey = !showOpenCodeKey">
+            {{ showOpenCodeKey ? '🙈' : '👁️' }}
           </button>
         </div>
       </div>
@@ -79,15 +98,18 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { getApiUrl } from '../utils/api.js'
 
 const settings = ref({
   activeEngine: 'demo',
   geminiApiKey: '',
+  opencodeApiKey: '',
   modelName: 'opencode-go/kimi-k2.6',
   showJyutping: true
 })
 
 const showKey = ref(false)
+const showOpenCodeKey = ref(false)
 const isTesting = ref(false)
 const testResult = ref(null)
 
@@ -114,19 +136,20 @@ async function testConnection() {
 
   try {
     // 1. Test backend health
-    const healthRes = await fetch('api/health')
+    const healthRes = await fetch(getApiUrl('api/health'))
     if (!healthRes.ok) {
       throw new Error('無法連線至後端伺服器 (Backend unreachable)')
     }
 
     // 2. Test chat route with selected engine
-    const chatRes = await fetch('api/chat', {
+    const chatRes = await fetch(getApiUrl('api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: [{ role: 'user', content: 'hi' }],
         activeEngine: settings.value.activeEngine,
         geminiApiKey: settings.value.geminiApiKey,
+        opencodeApiKey: settings.value.opencodeApiKey,
         model: settings.value.modelName
       })
     })
@@ -154,6 +177,8 @@ async function testConnection() {
   }
 }
 </script>
+
+
 
 <style scoped>
 .settings-panel {

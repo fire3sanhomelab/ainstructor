@@ -85,6 +85,7 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useSpeechRecognition } from '../composables/useSpeechRecognition.js'
+import { getApiUrl } from '../utils/api.js'
 
 const props = defineProps(['language'])
 
@@ -183,10 +184,10 @@ async function evaluatePronunciation(spoken) {
 
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
 
   try {
-    const res = await fetch('api/pronunciation', {
+    const res = await fetch(getApiUrl('api/pronunciation'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,
@@ -195,7 +196,9 @@ async function evaluatePronunciation(spoken) {
         target: currentPhrase.value.text,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey
+        geminiApiKey: settings.geminiApiKey,
+        opencodeApiKey: settings.opencodeApiKey,
+        model: settings.modelName || 'opencode-go/kimi-k2.6'
       })
     })
 
