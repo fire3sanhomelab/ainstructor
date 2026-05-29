@@ -314,7 +314,7 @@ async function startScenario(scenario) {
   
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/minimax-m2.7' }
 
   try {
     const res = await fetch(getApiUrl('api/scenario-start'), {
@@ -327,7 +327,7 @@ async function startScenario(scenario) {
         activeEngine: settings.activeEngine,
         geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
-        model: settings.modelName || 'opencode-go/kimi-k2.6'
+        model: settings.modelName || 'opencode-go/minimax-m2.7'
       })
     })
     
@@ -377,7 +377,7 @@ async function sendMessage() {
   
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/minimax-m2.7' }
 
   try {
     const res = await fetch(getApiUrl('api/chat'), {
@@ -394,7 +394,7 @@ async function sendMessage() {
         geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         scenarioId: activeScenario.value.id,
-        model: settings.modelName || 'opencode-go/kimi-k2.6'
+        model: settings.modelName || 'opencode-go/minimax-m2.7'
       })
     })
     
@@ -425,7 +425,7 @@ async function analyzeMessage(text) {
   showAnalysisModal.value = true
 
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'opencode-go/minimax-m2.7' }
 
   try {
     const res = await fetch(getApiUrl('api/explain'), {
@@ -437,7 +437,7 @@ async function analyzeMessage(text) {
         activeEngine: settings.activeEngine,
         geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
-        model: settings.modelName || 'opencode-go/kimi-k2.6'
+        model: settings.modelName || 'opencode-go/minimax-m2.7'
       })
     })
 

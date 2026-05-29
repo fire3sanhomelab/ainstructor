@@ -147,7 +147,7 @@ Content-Type: application/json
 {
   "messages": [{ "role": "user", "content": "你好" }],
   "language": "cantonese",
-  "model": "opencode-go/kimi-k2.6"
+  "model": "opencode-go/minimax-m2.7"
 }
 ```
 
@@ -190,7 +190,7 @@ POST /api/scenario-start
 |-------|-----------|
 | **Frontend** | Vue 3, Vite, Vite PWA |
 | **Backend** | Express.js, ws (WebSocket) |
-| **AI** | Ollama (kimi-k2.6), LM Studio |
+| **AI** | Ollama (minimax-m2.7), LM Studio |
 | **Container** | Docker, Nginx |
 
 ---
