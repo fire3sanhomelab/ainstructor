@@ -1,69 +1,9 @@
 <template>
   <div class="settings-panel">
     <h3>⚙️ 設定 / 设置</h3>
-    <p class="desc">設定您嘅 AI 引擎，以解鎖完整對話同發音評估功能。</p>
+    <p class="desc">管理您嘅學習偏好同測試連線狀態。</p>
 
     <div class="card">
-      <div class="form-group">
-        <label>AI 引擎 / AI Engine</label>
-        <select v-model="settings.activeEngine" @change="saveSettings">
-          <option value="demo">✨ 離線模擬 (無需 API 金鑰 / Mock Demo)</option>
-          <option value="gemini">☁️ Google Gemini API (雲端極速)</option>
-          <option value="opencode">🧠 OpenCode Go (Kimi)</option>
-          <option value="ollama">🖥️ Ollama (本地運行)</option>
-          <option value="llm-studio">🖥️ LM Studio (本地運行)</option>
-        </select>
-      </div>
-
-      <div v-if="settings.activeEngine === 'ollama' || settings.activeEngine === 'llm-studio' || settings.activeEngine === 'opencode'" class="form-group animate-slide-down">
-        <label>
-          本地/雲端模型名稱 / Model Name
-          <span class="hint">(例如: opencode-go/kimi-k2.6)</span>
-        </label>
-        <input 
-          v-model="settings.modelName" 
-          type="text" 
-          placeholder="opencode-go/kimi-k2.6" 
-          @input="saveSettings"
-        />
-      </div>
-
-      <div v-if="settings.activeEngine === 'gemini'" class="form-group animate-slide-down">
-        <label>
-          Gemini API 金鑰
-          <span class="hint">可以喺 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免費申請</span>
-        </label>
-        <div class="input-wrapper">
-          <input 
-            v-model="settings.geminiApiKey" 
-            :type="showKey ? 'text' : 'password'" 
-            placeholder="AIzaSy..." 
-            @input="saveSettings"
-          />
-          <button class="toggle-btn" @click="showKey = !showKey">
-            {{ showKey ? '🙈' : '👁️' }}
-          </button>
-        </div>
-      </div>
-
-      <div v-if="settings.activeEngine === 'opencode'" class="form-group animate-slide-down">
-        <label>
-          OpenCode API 金鑰
-          <span class="hint">可以留空，默認將使用後端配置的金鑰</span>
-        </label>
-        <div class="input-wrapper">
-          <input 
-            v-model="settings.opencodeApiKey" 
-            :type="showOpenCodeKey ? 'text' : 'password'" 
-            placeholder="sk-..." 
-            @input="saveSettings"
-          />
-          <button class="toggle-btn" @click="showOpenCodeKey = !showOpenCodeKey">
-            {{ showOpenCodeKey ? '🙈' : '👁️' }}
-          </button>
-        </div>
-      </div>
-
       <div class="form-group">
         <label>偏好設定 / Preferences</label>
         <div class="checkbox-wrapper">
@@ -101,15 +41,9 @@ import { ref, onMounted } from 'vue'
 import { getApiUrl } from '../utils/api.js'
 
 const settings = ref({
-  activeEngine: 'demo',
-  geminiApiKey: '',
-  opencodeApiKey: '',
-  modelName: 'opencode-go/kimi-k2.6',
   showJyutping: true
 })
 
-const showKey = ref(false)
-const showOpenCodeKey = ref(false)
 const isTesting = ref(false)
 const testResult = ref(null)
 
@@ -141,16 +75,12 @@ async function testConnection() {
       throw new Error('無法連線至後端伺服器 (Backend unreachable)')
     }
 
-    // 2. Test chat route with selected engine
+    // 2. Test chat route (backend will secretly handle the call via OpenCode)
     const chatRes = await fetch(getApiUrl('api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        messages: [{ role: 'user', content: 'hi' }],
-        activeEngine: settings.value.activeEngine,
-        geminiApiKey: settings.value.geminiApiKey,
-        opencodeApiKey: settings.value.opencodeApiKey,
-        model: settings.value.modelName
+        messages: [{ role: 'user', content: 'hi' }]
       })
     })
 
@@ -173,7 +103,6 @@ async function testConnection() {
       } catch {
         try {
           const rawText = await chatRes.text()
-          // Truncate to first 100 characters to keep message clean
           errMsg = rawText ? rawText.slice(0, 100) : `HTTP 錯誤碼：${chatRes.status}`
         } catch {
           errMsg = `HTTP 錯誤碼：${chatRes.status}`

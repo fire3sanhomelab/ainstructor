@@ -192,15 +192,17 @@ async function saveChatHistory(language, messages, response) {
 
 // ===== CHAT =====
 app.post('/api/chat', validate(['messages']), async (req, res) => {
-  const { messages, language = 'cantonese', model = 'opencode-go/kimi-k2.6', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', scenarioId = null } = req.body
+  const { messages, language = 'cantonese', scenarioId = null } = req.body
+  const model = 'opencode-go/kimi-k2.6'
+  const activeEngine = 'opencode'
+  const opencodeKey = OPENCODE_API_KEY
 
   const systemPrompts = {
     cantonese: '你係一位專業嘅廣東話導師。請用純正廣東話（口語化）回應。當學生講錯時，請溫柔地糾正發音同語法。保持耐心，鼓勵學生多講。',
     mandarin: '你是一位专业的普通话导师。请用标准普通话回应。当学生讲错时，请温柔地纠正发音和语法。保持耐心，鼓励学生多说。'
   }
   const systemPrompt = systemPrompts[language] || systemPrompts.cantonese;
-  const activeKey = geminiApiKey || GEMINI_API_KEY;
-  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
+  const activeKey = GEMINI_API_KEY;
 
   // 1. If user chose OpenCode
   if (activeEngine === 'opencode' && opencodeKey) {
@@ -308,7 +310,10 @@ app.post('/api/chat', validate(['messages']), async (req, res) => {
 
 // ===== PRONUNCIATION FEEDBACK =====
 app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) => {
-  const { spoken, target, language = 'cantonese', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', model = 'opencode-go/kimi-k2.6' } = req.body
+  const { spoken, target, language = 'cantonese' } = req.body
+  const model = 'opencode-go/kimi-k2.6'
+  const activeEngine = 'opencode'
+  const opencodeKey = OPENCODE_API_KEY
 
   const safeSpoken = sanitize(spoken)
   const safeTarget = sanitize(target)
@@ -318,8 +323,7 @@ app.post('/api/pronunciation', validate(['spoken', 'target']), async (req, res) 
     : `请评估以下普通话发音。目标句子：「${safeTarget}」。学生读出：「${safeSpoken}」。
 请提供：1. 整体评分（0-100） 2. 错误的字词 3. 改善建议。回应格式：JSON {score, errors[], suggestions[]}`
 
-  const activeKey = geminiApiKey || GEMINI_API_KEY;
-  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
+  const activeKey = GEMINI_API_KEY;
 
   // 1. If user chose OpenCode
   if (activeEngine === 'opencode' && opencodeKey) {
@@ -464,7 +468,10 @@ app.get('/api/scenarios', (req, res) => {
 })
 
 app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
-  const { scenarioId, language = 'cantonese', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', model = 'opencode-go/kimi-k2.6' } = req.body
+  const { scenarioId, language = 'cantonese' } = req.body
+  const model = 'opencode-go/kimi-k2.6'
+  const activeEngine = 'opencode'
+  const opencodeKey = OPENCODE_API_KEY
 
   const scenarioPrompts = {
     cantonese: {
@@ -484,8 +491,7 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
   }
 
   const prompt = scenarioPrompts[language]?.[scenarioId] || scenarioPrompts.cantonese.restaurant
-  const activeKey = geminiApiKey || GEMINI_API_KEY;
-  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
+  const activeKey = GEMINI_API_KEY;
 
   // 1. OpenCode
   if (activeEngine === 'opencode' && opencodeKey) {
@@ -588,7 +594,10 @@ app.post('/api/scenario-start', validate(['scenarioId']), async (req, res) => {
 
 // ===== EXPLAIN SENTENCE =====
 app.post('/api/explain', validate(['text']), async (req, res) => {
-  const { text, language = 'cantonese', geminiApiKey = '', opencodeApiKey = '', activeEngine = '', model = 'opencode-go/kimi-k2.6' } = req.body
+  const { text, language = 'cantonese' } = req.body
+  const model = 'opencode-go/kimi-k2.6'
+  const activeEngine = 'opencode'
+  const opencodeKey = OPENCODE_API_KEY
 
   const prompt = language === 'cantonese'
     ? `請分析以下廣東話句子：「${sanitize(text)}」。
@@ -598,8 +607,7 @@ app.post('/api/explain', validate(['text']), async (req, res) => {
 请提供：1. 英文翻译 2. 汉语拼音（Pinyin） 3. 重点词汇拆解（包括汉字、拼音、英文解释）。
 请以 JSON 格式回应，格式必须为：{"translation": "...", "pronunciation": "...", "vocabulary": [{"word": "...", "pinyin": "...", "meaning": "..."}]}`
 
-  const activeKey = geminiApiKey || GEMINI_API_KEY;
-  const opencodeKey = opencodeApiKey || OPENCODE_API_KEY;
+  const activeKey = GEMINI_API_KEY;
 
   // 1. OpenCode
   if (activeEngine === 'opencode' && opencodeKey) {
