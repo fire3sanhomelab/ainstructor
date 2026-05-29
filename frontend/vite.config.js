@@ -13,6 +13,7 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/ainstructor/',
   plugins: [
     vue(),
     VitePWA({
@@ -24,9 +25,11 @@ export default defineConfig({
         theme_color: '#4F46E5',
         background_color: '#ffffff',
         display: 'standalone',
+        scope: process.env.VITE_BASE_PATH || '/ainstructor/',
+        start_url: process.env.VITE_BASE_PATH || '/ainstructor/',
         icons: [
-          { src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512x512.png', sizes: '512x512', type: 'image/png' }
+          { src: 'icon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512x512.png', sizes: '512x512', type: 'image/png' }
         ]
       }
     })
