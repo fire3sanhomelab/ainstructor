@@ -274,6 +274,8 @@ async function loadScenarios() {
     if (res.ok) {
       const data = await res.json()
       scenarios.value = data.scenarios
+    } else {
+      throw new Error(`Server returned status ${res.status}`)
     }
   } catch (e) {
     if (e.name === 'AbortError') {

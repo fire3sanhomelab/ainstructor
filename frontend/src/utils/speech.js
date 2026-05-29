@@ -48,9 +48,16 @@ export function speakText(text, language, rate = 0.85) {
     })
   }
 
-  // 3. Fallback to broad language prefix (e.g., 'zh' for Chinese)
+  // 3. Fallback to broad language prefix ONLY if it's dialect-appropriate
   if (!voice) {
-    voice = voices.find(v => normalize(v.lang).startsWith('zh'))
+    voice = voices.find(v => {
+      const lang = normalize(v.lang)
+      if (language === 'cantonese') {
+        return lang === 'zh-hk'
+      } else {
+        return lang.startsWith('zh') && lang !== 'zh-hk'
+      }
+    })
   }
 
   if (voice) {
