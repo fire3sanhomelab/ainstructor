@@ -155,16 +155,33 @@ async function testConnection() {
     })
 
     if (chatRes.ok) {
-      const data = await chatRes.json()
+      let data
+      try {
+        data = await chatRes.json()
+      } catch {
+        throw new Error('後端回覆格式錯誤 (Invalid response format from server)')
+      }
       testResult.value = {
         status: 'success',
         message: `連線成功！已使用 ${data.endpoint} 引擎`
       }
     } else {
-      const err = await chatRes.json()
+      let errMsg = '無法連線至 AI 引擎'
+      try {
+        const err = await chatRes.json()
+        errMsg = err.error || errMsg
+      } catch {
+        try {
+          const rawText = await chatRes.text()
+          // Truncate to first 100 characters to keep message clean
+          errMsg = rawText ? rawText.slice(0, 100) : `HTTP 錯誤碼：${chatRes.status}`
+        } catch {
+          errMsg = `HTTP 錯誤碼：${chatRes.status}`
+        }
+      }
       testResult.value = {
         status: 'error',
-        message: `測試失敗：${err.error || '無法連線至 AI 引擎'}`
+        message: `測試失敗：${errMsg}`
       }
     }
   } catch (e) {
