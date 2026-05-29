@@ -14,6 +14,19 @@
         </select>
       </div>
 
+      <div v-if="settings.activeEngine === 'ollama' || settings.activeEngine === 'llm-studio'" class="form-group animate-slide-down">
+        <label>
+          本地模型名稱 / Local Model Name
+          <span class="hint">(例如: opencode-go/kimi-k2.6)</span>
+        </label>
+        <input 
+          v-model="settings.modelName" 
+          type="text" 
+          placeholder="opencode-go/kimi-k2.6" 
+          @input="saveSettings"
+        />
+      </div>
+
       <div v-if="settings.activeEngine === 'gemini'" class="form-group animate-slide-down">
         <label>
           Gemini API 金鑰
@@ -70,6 +83,7 @@ import { ref, onMounted } from 'vue'
 const settings = ref({
   activeEngine: 'demo',
   geminiApiKey: '',
+  modelName: 'opencode-go/kimi-k2.6',
   showJyutping: true
 })
 
@@ -112,7 +126,8 @@ async function testConnection() {
       body: JSON.stringify({
         messages: [{ role: 'user', content: 'hi' }],
         activeEngine: settings.value.activeEngine,
-        geminiApiKey: settings.value.geminiApiKey
+        geminiApiKey: settings.value.geminiApiKey,
+        model: settings.value.modelName
       })
     })
 

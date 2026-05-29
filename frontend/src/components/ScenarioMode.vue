@@ -371,7 +371,7 @@ async function sendMessage() {
   
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', modelName: 'opencode-go/kimi-k2.6' }
 
   try {
     const res = await fetch('api/chat', {
@@ -387,7 +387,7 @@ async function sendMessage() {
         activeEngine: settings.activeEngine,
         geminiApiKey: settings.geminiApiKey,
         scenarioId: activeScenario.value.id,
-        model: 'opencode-go/kimi-k2.6'
+        model: settings.modelName || 'opencode-go/kimi-k2.6'
       })
     })
     
