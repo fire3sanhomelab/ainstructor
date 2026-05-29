@@ -209,7 +209,7 @@ function clearChat() {
 
 async function checkOnline() {
   try {
-    const res = await fetch('/api/health')
+    const res = await fetch('api/health')
     isOnline.value = res.ok
   } catch {
     isOnline.value = false
@@ -240,7 +240,7 @@ async function sendMessage() {
   const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
 
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch('api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -317,7 +317,7 @@ async function analyzeMessage(text) {
   const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
 
   try {
-    const res = await fetch('/api/explain', {
+    const res = await fetch('api/explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

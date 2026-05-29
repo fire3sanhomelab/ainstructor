@@ -266,7 +266,7 @@ async function loadScenarios() {
   isScenariosLoading.value = true
   const controller = new AbortController()
   try {
-    const res = await fetch(`/api/scenarios?language=${props.language}`, {
+    const res = await fetch(`api/scenarios?language=${props.language}`, {
       signal: controller.signal
     })
     if (res.ok) {
@@ -313,7 +313,7 @@ async function startScenario(scenario) {
   const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
 
   try {
-    const res = await fetch('/api/scenario-start', {
+    const res = await fetch('api/scenario-start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,
@@ -374,7 +374,7 @@ async function sendMessage() {
   const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
 
   try {
-    const res = await fetch('/api/chat', {
+    const res = await fetch('api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,
@@ -421,7 +421,7 @@ async function analyzeMessage(text) {
   const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
 
   try {
-    const res = await fetch('/api/explain', {
+    const res = await fetch('api/explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

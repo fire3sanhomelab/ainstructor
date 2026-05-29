@@ -186,7 +186,7 @@ async function evaluatePronunciation(spoken) {
   const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '' }
 
   try {
-    const res = await fetch('/api/pronunciation', {
+    const res = await fetch('api/pronunciation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: abortController.value.signal,

@@ -100,13 +100,13 @@ async function testConnection() {
 
   try {
     // 1. Test backend health
-    const healthRes = await fetch('/api/health')
+    const healthRes = await fetch('api/health')
     if (!healthRes.ok) {
       throw new Error('無法連線至後端伺服器 (Backend unreachable)')
     }
 
     // 2. Test chat route with selected engine
-    const chatRes = await fetch('/api/chat', {
+    const chatRes = await fetch('api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
