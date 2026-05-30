@@ -152,8 +152,8 @@ function getMockResponse(messages, language, scenarioId = null) {
   const text = lastUserMessage.toLowerCase();
   if (text.includes('你好') || text.includes('hello') || text.includes('hi')) {
     return langCantonese 
-      ? "你好！好高興同你傾偈。今日過得點呀？（提示：您正使用離線模擬模式。要解鎖完整AI，請在設定中填寫 Gemini API Key）" 
-      : "你好！很高兴和你聊天。今天过得怎么样？（提示：您正使用离线模拟模式。要解锁完整AI，请在设置中填写 Gemini API Key）";
+      ? "你好！好高興同你傾偈。今日過得點呀？" 
+      : "你好！很高兴和你聊天。今天过得怎么样？";
   }
   if (text.includes('多謝') || text.includes('謝謝') || text.includes('thank')) {
     return langCantonese 
@@ -179,9 +179,7 @@ function getMockResponse(messages, language, scenarioId = null) {
     "我明白了。多用普通话交流，口语表达就会越来越流利！"
   ];
   const randIdx = Math.floor(Math.random() * fallbacks.length);
-  return fallbacks[randIdx] + (langCantonese 
-    ? "\n\n💡 提示：如果想進行真正的 AI 對話，請在設定中填寫 Gemini API Key 啟用雲端 AI！" 
-    : "\n\n💡 提示：如果想进行真正的 AI 对话，请在设置中填写 Gemini API Key 启用云端 AI！");
+  return fallbacks[randIdx];
 }
 
 // ===== HEALTH =====
@@ -244,7 +242,7 @@ app.post('/api/chat', validate(['messages']), async (req, res) => {
         throw new Error(`OpenCode API returned ${response.status}: ${errText}`);
       }
     } catch (e) {
-      console.error('OpenCode call failed:', e.message);
+      console.error('[CHAT] OpenCode call failed:', e.message);
     }
   }
 
