@@ -177,7 +177,7 @@ async function evaluatePronunciation(spoken) {
 
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const res = await fetch(getApiUrl('api/pronunciation'), {
@@ -189,7 +189,6 @@ async function evaluatePronunciation(spoken) {
         target: currentPhrase.value.text,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         model: settings.modelName || 'minimax-m2.7'
       })

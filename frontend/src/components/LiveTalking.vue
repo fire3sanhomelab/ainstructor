@@ -192,7 +192,7 @@ async function handleUserSpeech(text) {
   liveState.value = 'thinking'
   
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const response = await fetch(getApiUrl('api/chat'), {
@@ -205,7 +205,6 @@ async function handleUserSpeech(text) {
           content: m.content
         })),
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         model: settings.modelName || 'minimax-m2.7'
       })

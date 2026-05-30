@@ -314,7 +314,7 @@ async function startScenario(scenario) {
   
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const res = await fetch(getApiUrl('api/scenario-start'), {
@@ -325,7 +325,6 @@ async function startScenario(scenario) {
         scenarioId: scenario.id,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         model: settings.modelName || 'minimax-m2.7'
       })
@@ -377,7 +376,7 @@ async function sendMessage() {
   
   // Load Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const res = await fetch(getApiUrl('api/chat'), {
@@ -391,7 +390,6 @@ async function sendMessage() {
           content: m.content
         })),
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         scenarioId: activeScenario.value.id,
         model: settings.modelName || 'minimax-m2.7'
@@ -425,7 +423,7 @@ async function analyzeMessage(text) {
   showAnalysisModal.value = true
 
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const res = await fetch(getApiUrl('api/explain'), {
@@ -435,7 +433,6 @@ async function analyzeMessage(text) {
         text,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         model: settings.modelName || 'minimax-m2.7'
       })

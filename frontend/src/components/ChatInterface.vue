@@ -301,7 +301,7 @@ async function sendMessage() {
   
   // Load AI Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const response = await fetch(getApiUrl('api/chat'), {
@@ -315,7 +315,6 @@ async function sendMessage() {
           content: m.content
         })),
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         model: settings.modelName || 'minimax-m2.7'
       })
@@ -328,10 +327,7 @@ async function sendMessage() {
       const engineLabels = {
         'ollama': 'Ollama',
         'llm-studio': 'LM Studio',
-        'opencode': 'OpenCode Go',
-        'gemini': 'Gemini AI',
-        'gemini-fallback': 'Gemini AI',
-        'demo-mock': '離線模擬'
+        'opencode': 'OpenCode Go'
       }
       currentEngine.value = engineLabels[data.endpoint] || ''
 
@@ -423,7 +419,7 @@ async function sendLiveMessage(text) {
   
   const controller = createAbortController()
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '', modelName: 'minimax-m2.7' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '', modelName: 'minimax-m2.7' }
 
   try {
     const response = await fetch(getApiUrl('api/chat'), {
@@ -437,7 +433,6 @@ async function sendLiveMessage(text) {
           content: m.content
         })),
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey,
         model: settings.modelName || 'minimax-m2.7'
       })
@@ -460,10 +455,7 @@ async function sendLiveMessage(text) {
       const engineLabels = {
         'ollama': 'Ollama',
         'llm-studio': 'LM Studio',
-        'opencode': 'OpenCode Go',
-        'gemini': 'Gemini AI',
-        'gemini-fallback': 'Gemini AI',
-        'demo-mock': '離線模擬'
+        'opencode': 'OpenCode Go'
       }
       currentEngine.value = engineLabels[data.endpoint] || ''
 
@@ -494,7 +486,7 @@ async function analyzeMessage(text) {
 
   // Load AI Settings
   const savedSettings = localStorage.getItem('ai-instructor-settings')
-  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'demo', geminiApiKey: '', opencodeApiKey: '' }
+  const settings = savedSettings ? JSON.parse(savedSettings) : { activeEngine: 'opencode', opencodeApiKey: '' }
 
   try {
     const res = await fetch(getApiUrl('api/explain'), {
@@ -504,7 +496,6 @@ async function analyzeMessage(text) {
         text,
         language: props.language,
         activeEngine: settings.activeEngine,
-        geminiApiKey: settings.geminiApiKey,
         opencodeApiKey: settings.opencodeApiKey
       })
     })
