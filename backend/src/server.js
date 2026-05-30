@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 3456
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
 const LLM_STUDIO_URL = process.env.LLM_STUDIO_URL || 'http://192.168.1.100:1234'
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
-const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY || 'sk-spmGe7ThbClaKqTZWopntoOPpuXkTikikSRkNq7iMAjcWxRSMANUrpD8gPXuibBg'
+const OPENCODE_API_KEY = process.env.OPENCODE_API_KEY || ''
 
 // ===== APP SETUP =====
 const app = express()

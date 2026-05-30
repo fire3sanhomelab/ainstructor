@@ -128,35 +128,36 @@ async function testConnection() {
 
 <style scoped>
 .settings-panel {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 h3 {
-  color: #a855f7;
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
+  color: #7dd3fc;
+  font-size: 1.35rem;
+  margin-bottom: 0.2rem;
 }
 
 .desc {
-  color: #94a3b8;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  color: #64748b;
+  font-size: 0.825rem;
+  margin-bottom: 1.25rem;
 }
 
 .card {
-  background: rgba(20, 21, 33, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  backdrop-filter: blur(12px);
+  background: rgba(15, 16, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .form-group:last-child {
@@ -164,20 +165,20 @@ h3 {
 }
 
 label {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #cbd5e1;
 }
 
 .hint {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: normal;
-  color: #64748b;
+  color: #475569;
   margin-left: 0.5rem;
 }
 
 .hint a {
-  color: #6366f1;
+  color: #38bdf8;
   text-decoration: none;
 }
 
@@ -187,19 +188,20 @@ label {
 
 select, input[type="text"], input[type="password"] {
   width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(10, 11, 18, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.65rem 0.875rem;
+  background: rgba(10, 11, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  color: #f1f5f9;
-  font-size: 0.95rem;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  font-family: inherit;
   outline: none;
   transition: all 0.2s;
 }
 
 select:focus, input:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.06);
 }
 
 .input-wrapper {
@@ -218,20 +220,20 @@ select:focus, input:focus {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .checkbox-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
+  gap: 0.65rem;
+  margin-top: 0.2rem;
 }
 
 .checkbox-wrapper input[type="checkbox"] {
-  width: 1.2rem;
-  height: 1.2rem;
-  accent-color: #a855f7;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #0ea5e9;
   cursor: pointer;
 }
 
@@ -239,59 +241,66 @@ select:focus, input:focus {
   cursor: pointer;
   user-select: none;
   font-weight: normal;
-  color: #cbd5e1;
+  color: #94a3b8;
+  font-size: 0.85rem;
 }
 
 .test-card h4 {
-  margin-bottom: 0.75rem;
-  color: #e2e8f0;
+  margin-bottom: 0.65rem;
+  color: #cbd5e1;
+  font-size: 0.95rem;
 }
 
 .test-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: 0.875rem;
 }
 
 .test-btn {
-  padding: 0.6rem 1.25rem;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  padding: 0.55rem 1.1rem;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
   border: none;
-  border-radius: 20px;
+  border-radius: 16px;
   color: white;
   font-weight: 600;
+  font-size: 0.825rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .test-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 4px 10px rgba(14, 165, 233, 0.25);
+}
+
+.test-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
 }
 
 .test-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .result-badge {
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.875rem;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.775rem;
   font-weight: 500;
 }
 
 .result-badge.success {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.1);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .result-badge.error {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.1);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .animate-slide-down {
@@ -304,7 +313,7 @@ select:focus, input:focus {
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
+  from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 </style>

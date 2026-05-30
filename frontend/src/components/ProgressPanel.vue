@@ -196,109 +196,121 @@ function exportData() {
 
 <style scoped>
 .progress-panel {
-  background: rgba(20, 21, 33, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  background: rgba(15, 16, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
   padding: 1.5rem;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 h3 {
-  color: #a855f7;
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
+  color: #7dd3fc;
+  font-size: 1.35rem;
+  margin-bottom: 0.2rem;
 }
 
 .desc {
-  color: #94a3b8;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  color: #64748b;
+  font-size: 0.825rem;
+  margin-bottom: 1.25rem;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .stat-card {
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 1.25rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 1rem 0.875rem;
   text-align: center;
-  transition: transform 0.2s;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.stat-card:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .stat-icon {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   display: block;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .stat-value {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #a855f7;
+  color: #38bdf8;
   display: block;
-  text-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  font-size: 0.725rem;
   color: #64748b;
   font-weight: 500;
 }
 
 .recent-activity {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .recent-activity h4, .achievements h4 {
-  color: #e2e8f0;
-  margin-bottom: 0.75rem;
+  color: #cbd5e1;
+  margin-bottom: 0.65rem;
   font-weight: 700;
   font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
 }
 
 .empty {
-  color: #64748b;
+  color: #475569;
   text-align: center;
-  padding: 2rem;
+  padding: 1.75rem;
   background: rgba(255, 255, 255, 0.01);
-  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.04);
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.825rem;
 }
 
 .activity-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-height: 200px;
+  gap: 0.4rem;
+  max-height: 180px;
   overflow-y: auto;
+}
+
+.activity-list::-webkit-scrollbar {
+  width: 4px;
+}
+.activity-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
 }
 
 .activity-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 0.65rem;
+  padding: 0.65rem 0.875rem;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 8px;
 }
 
 .activity-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .activity-info {
@@ -309,46 +321,46 @@ h3 {
 }
 
 .activity-desc {
-  font-size: 0.9rem;
-  color: #cbd5e1;
+  font-size: 0.825rem;
+  color: #94a3b8;
 }
 
 .activity-time {
-  font-size: 0.75rem;
-  color: #64748b;
+  font-size: 0.675rem;
+  color: #475569;
 }
 
 .achievements {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .achievement-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.5rem;
 }
 
 .achievement-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: 0.45rem;
+  padding: 0.65rem;
   background: rgba(255, 255, 255, 0.01);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 8px;
-  opacity: 0.35;
+  opacity: 0.3;
   transition: all 0.3s;
 }
 
 .achievement-item.unlocked {
   opacity: 1;
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.06);
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.05);
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.04);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.04);
 }
 
 .achievement-icon {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
 }
 
 .ach-meta {
@@ -358,14 +370,14 @@ h3 {
 }
 
 .achievement-name {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #cbd5e1;
 }
 
 .achievement-status {
-  font-size: 0.65rem;
-  color: #64748b;
+  font-size: 0.6rem;
+  color: #475569;
 }
 
 .achievement-item.unlocked .achievement-status {
@@ -375,25 +387,29 @@ h3 {
 .achievement-badge {
   color: #34d399;
   font-weight: 900;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .export-btn {
   width: 100%;
-  padding: 0.85rem;
+  padding: 0.75rem;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
   color: white;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 3px 10px rgba(14, 165, 233, 0.15);
 }
 
 .export-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+
+.export-btn:active {
+  transform: translateY(0) scale(0.97);
 }
 </style>

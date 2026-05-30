@@ -12,6 +12,8 @@ services:
       - PORT=3456
       - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
       - LLM_STUDIO_URL=${LLM_STUDIO_URL:-http://host.docker.internal:1234}
+      - OPENCODE_API_KEY=${OPENCODE_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./backend/data:/app/data
     restart: unless-stopped
